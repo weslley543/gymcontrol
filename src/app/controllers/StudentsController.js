@@ -41,7 +41,7 @@ class StudentsController {
 
     const studentExists = await Students.findByPk(id);
     if (studentExists) {
-      const student = await Students.destroy({ where: { id } });
+      await Students.destroy({ where: { id } });
       return res.status(200).json({ msg: 'User deleted' });
     }
     return res.status(401).json({ msg: 'User not find' });
