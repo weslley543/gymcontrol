@@ -25,6 +25,6 @@ routes.put('/plans/:id', PlansController.update);
 routes.post('/registration', RegistrationController.store);
 routes.get('/registration', RegistrationController.index);
 routes.delete('/registration', RegistrationController.delete);
-routes.update('/registration'.RegistrationController.update);
+routes.update('/registration', RegistrationController.update);
 
 export default routes;
