@@ -36,7 +36,7 @@ class RegistrationController {
     if (!(await schema.isValid(req.body))) {
       return res.status(400).json({ error: 'Data send is not valid' });
     }
-    const { plan_id, student_id } = req.body;
+
     const plan = await Plans.findOne({ where: { id: req.body.plan_id } });
 
     if (!plan) {
@@ -44,7 +44,7 @@ class RegistrationController {
     }
 
     const existRegister = await Registration.findOne({
-      where: { student_id, canceled_at: null },
+      where: { student_id: req.body.student_id, canceled_at: null },
     });
 
     if (existRegister) {
@@ -58,15 +58,15 @@ class RegistrationController {
       return res.status(400).json({ error: 'Past date not permited' });
     }
 
-    const end_date = endOfHour(new Date(hourStart));
+    const endDate = endOfHour(new Date(hourStart));
 
-    end_date.setMonth(end_date.getMonth() + plan.duration);
+    endDate.setMonth(endDate.getMonth() + plan.duration);
     const registration = await Registration.create({
-      plan_id,
-      student_id,
+      plan_id: req.body.plan_id,
+      student_id: req.body.student_id,
       price: plan.duration * plan.price,
       start_date: hourStart,
-      end_date,
+      end_date: endDate,
     });
 
     return res.status(200).json(registration);
@@ -84,10 +84,37 @@ class RegistrationController {
     registration.canceled_at = new Date();
     await registration.save();
 
-    res.status(200).json(registration);
+    return res.status(200).json(registration);
   }
 
-  async update(req, res) {}
+  async update(req, res) {
+    const schema = Yup.object().shape({
+      plan_id: Yup.number().required(),
+      student_id: Yup.number().required(),
+      start_date: Yup.string(),
+    });
+
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'Information is fault' });
+    }
+
+    const registration = await Registration.findOne({
+      where: { student_id: req.body.student_id },
+    });
+
+    if (!registration) {
+      return res.status(400).json({ msg: 'User not registrated' });
+    }
+
+    const plan = await Plans.findOne({ where: { id: req.body.plan_id } });
+    if (!plan) {
+      return res.status(400).json({ msg: 'Plan does not exist' });
+    }
+    registration.plan_id = plan.id;
+    registration.price = plan.price * plan.duration;
+    await registration.save();
+    return res.status(200).json(registration);
+  }
 }
 
 export default new RegistrationController();
