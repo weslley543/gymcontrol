@@ -3,6 +3,8 @@ import { startOfHour, parseISO, isBefore, endOfHour } from 'date-fns';
 import Registration from '../models/Registration';
 import Plans from '../models/Plans';
 import Students from '../models/Students';
+import RegistrationMail from '../jobs/RegistrationMail';
+import Queue from '../../lib/Queue';
 
 class RegistrationController {
   async index(req, res) {
@@ -61,7 +63,7 @@ class RegistrationController {
     const endDate = endOfHour(new Date(hourStart));
 
     endDate.setMonth(endDate.getMonth() + plan.duration);
-    const registration = await Registration.create({
+    const newRegistration = await Registration.create({
       plan_id: req.body.plan_id,
       student_id: req.body.student_id,
       price: plan.duration * plan.price,
@@ -69,7 +71,18 @@ class RegistrationController {
       end_date: endDate,
     });
 
-    return res.status(200).json(registration);
+    const registration = await Registration.findOne({
+      where: { id: newRegistration.id },
+      include: [
+        {
+          model: Students,
+          as: 'student',
+          attributes: ['name', 'email'],
+        },
+      ],
+    });
+    await Queue.add(RegistrationMail.key, { registration });
+    return res.status(200).json(newRegistration);
   }
 
   async delete(req, res) {

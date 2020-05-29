@@ -15,6 +15,23 @@ class Mail {
       auth: auth.user ? auth : null,
     });
   }
+
+  configureTemplates() {
+    const viewPath = resolve(__dirname, '..', 'app', 'views', 'emails');
+    this.transporter.use(
+      'compile',
+      nodemailerhbs({
+        viewEngine: exphbs.create({
+          layoutsDir: resolve(viewPath, 'layouts'),
+          partialsDir: resolve(viewPath, 'partial'),
+          defaultLayout: 'default',
+          extname: 'hbs',
+        }),
+        viewPath,
+        extname: '.hbs',
+      })
+    );
+  }
 }
 
 export default new Mail();
